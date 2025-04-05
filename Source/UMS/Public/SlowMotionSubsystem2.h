@@ -2,13 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "SlowMotionSubsystem.generated.h"
+#include "SlowMotionSubsystem2.generated.h"
 
 // Forward declaration for the timeline curve
 class UCurveFloat;
 
 UCLASS()
-class YOURPROJECT_API USlowMotionSubsystem : public UGameInstanceSubsystem
+class UMS_API USlowMotionSubsystem : public UGameInstanceSubsystem
 {
     GENERATED_BODY()
 
