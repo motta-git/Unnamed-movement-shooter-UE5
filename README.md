@@ -2,7 +2,8 @@
 
 Fps game developed with Unreal Engine 5.5.4
 <br>
-![image](https://github.com/user-attachments/assets/7a67a649-cd71-45c6-a75b-8333505868be)
+
+https://github.com/user-attachments/assets/465aa688-e384-4cf9-9de4-3d6b5e009d22
 
 # Folder Structure
  
