@@ -12,3 +12,15 @@ Saved
 *.suo
 *.xcodeproj
 *.xcworkspace
+
+/Build/
+/Packages/
+/Mac/
+/Linux/
+/IOS/
+/Android/
+/Windows/
+
+*.log
+*.bak
+*.tmp
