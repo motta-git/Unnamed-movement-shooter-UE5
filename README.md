@@ -47,3 +47,5 @@ Credits:
 
 Assets:
 -"M16 Assault Rifle" (https://skfb.ly/6Sn8t) by Mateusz Woliński is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+-'Animation Starter Pack' by Epic Games
+-'Pistol' made by DJMaesen Is licensed under creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/)
