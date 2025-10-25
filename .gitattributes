@@ -1,0 +1,19 @@
+# This tells Git to auto-detect text files and handle line endings correctly.
+* text=auto
+
+# === UNREAL ENGINE ASSETS ===
+
+# Track specific LARGE asset types and map files with LFS.
+*.umap filter=lfs diff=lfs merge=lfs -text
+Content/Audio/** filter=lfs diff=lfs merge=lfs -text
+Content/Developers/** filter=lfs diff=lfs merge=lfs -text
+Content/Movies/** filter=lfs diff=lfs merge=lfs -text
+Content/Meshes/** filter=lfs diff=lfs merge=lfs -text
+Content/Textures/** filter=lfs diff=lfs merge=lfs -text
+Content/Megascans/** filter=lfs diff=lfs merge=lfs -text
+
+# === IMPORTANT EXCLUSION ===
+# This line tells Git to treat all other .uasset files (like Blueprints
+# and the External Actors from World Partition) as normal files, NOT LFS files.
+# It must come AFTER the specific rules above.
+*.uasset !filter !diff !merge
