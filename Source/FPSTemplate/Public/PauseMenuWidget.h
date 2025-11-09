@@ -12,7 +12,7 @@ class UWidgetSwitcher;
  * Has Continue, Options, and Exit to Menu buttons
  */
 UCLASS()
-class FPSTemplate_API UPauseMenuWidget : public UUserWidget
+class UPauseMenuWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
@@ -40,7 +40,7 @@ protected:
 
 	// Name of the main menu level to return to
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Levels")
-	FName MainMenuLevelName = FName("MainMenu");
+	FName MainMenuLevelName = FName("L_Level_8");
 
 	// Options menu widget class (we'll create this next)
 	UPROPERTY(EditDefaultsOnly, Category = "UI")

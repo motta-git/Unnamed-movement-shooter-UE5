@@ -7,7 +7,6 @@ void UPauseMenuWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// Initialize bindings
 	if (ContinueButton)
 	{
 		ContinueButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnContinueClicked);
@@ -20,7 +19,17 @@ void UPauseMenuWidget::NativeConstruct()
 
 	if (ExitToMenuButton)
 	{
-		ExitToMenuButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnExitToMenuClicked);
+		ExitToMenuButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnExitPromptClicked);
+	}
+
+	if (ConfirmExitButton)
+	{
+		ConfirmExitButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnExitToMenuClicked);
+	}
+
+	if (CancelExitButton)
+	{
+		CancelExitButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnCancelExitClicked);
 	}
 
 	OptionsMenuWidget = nullptr;
@@ -28,7 +37,6 @@ void UPauseMenuWidget::NativeConstruct()
 
 void UPauseMenuWidget::ClosePauseMenu()
 {
-	// Remove from viewport and unpause the game
 	RemoveFromParent();
 
 	if (GetWorld())
@@ -44,19 +52,32 @@ void UPauseMenuWidget::OnContinueClicked()
 
 void UPauseMenuWidget::OnOptionsClicked()
 {
-	// Switch to options panel if a widget switcher is wired up
 	if (MenuSwitcher)
 	{
-		// Attempt to switch to the second widget (index1) which is commonly the Options panel
-		MenuSwitcher->SetActiveWidgetIndex(1);
+		MenuSwitcher->SetActiveWidgetIndex(1); // Show options panel
+	}
+}
+
+void UPauseMenuWidget::OnExitPromptClicked()
+{
+	if (MenuSwitcher)
+	{
+		MenuSwitcher->SetActiveWidgetIndex(2); // Show exit confirmation panel
 	}
 }
 
 void UPauseMenuWidget::OnExitToMenuClicked()
 {
-	// Open the main menu level
 	if (GetWorld())
 	{
 		UGameplayStatics::OpenLevel(this, MainMenuLevelName);
+	}
+}
+
+void UPauseMenuWidget::OnCancelExitClicked()
+{
+	if (MenuSwitcher)
+	{
+		MenuSwitcher->SetActiveWidgetIndex(0); // Return to main menu panel
 	}
 }
