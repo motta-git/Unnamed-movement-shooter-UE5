@@ -60,4 +60,18 @@ private:
 	// Current options menu instance
 	UPROPERTY()
 	UUserWidget* OptionsMenuWidget;
+
+	// Additional buttons for exit confirmation
+	UPROPERTY(meta = (BindWidget))
+	UButton* ConfirmExitButton;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* CancelExitButton;
+
+	// Additional button click handlers
+	UFUNCTION()
+	void OnExitPromptClicked();
+
+	UFUNCTION()
+	void OnCancelExitClicked();
 };
