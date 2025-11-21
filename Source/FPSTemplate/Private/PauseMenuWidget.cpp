@@ -3,6 +3,9 @@
 #include "Components/WidgetSwitcher.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
+#include "Engine/GameViewportClient.h"
+#include "InputCoreTypes.h"
+#include "Input/Reply.h"
 
 void UPauseMenuWidget::NativeConstruct()
 {
@@ -48,16 +51,45 @@ void UPauseMenuWidget::NativeConstruct()
 	}
 }
 
+FReply UPauseMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+	// Close the pause menu when Escape is pressed
+	if (InKeyEvent.GetKey() == EKeys::Escape)
+	{
+		ClosePauseMenu();
+		return FReply::Handled();
+	}
+
+	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+}
+
 void UPauseMenuWidget::ClosePauseMenu()
 {
 	RemoveFromParent();
 
 	if (APlayerController* PC = GetOwningPlayer())
 	{
-		PC->SetInputMode(FInputModeGameOnly());
+		// Use a game-only input mode that does not require clicking to capture the mouse
+		FInputModeGameOnly Mode;
+		// Ensure the mouse capture isn't tied to mouse-down (helps with immediate look after closing)
+		Mode.SetConsumeCaptureMouseDown(false);
+		PC->SetInputMode(Mode);
 		PC->bShowMouseCursor = false;
+
+		// Disable UI-specific click/mouse over events so the controller receives look/move normally
+		PC->bEnableClickEvents = false;
+		PC->bEnableMouseOverEvents = false;
+
 		PC->SetIgnoreLookInput(false);
 		PC->SetIgnoreMoveInput(false);
+
+		// Center the mouse in the viewport so look input is captured reliably
+		if (GetWorld() && GetWorld()->GetGameViewport())
+		{
+			FVector2D ViewportSize;
+			GetWorld()->GetGameViewport()->GetViewportSize(ViewportSize);
+			PC->SetMouseLocation((int32)(ViewportSize.X * 0.5f), (int32)(ViewportSize.Y * 0.5f));
+		}
 	}
 
 	if (GetWorld())
@@ -77,7 +109,7 @@ void UPauseMenuWidget::OnOptionsClicked()
 	if (MenuSwitcher)
 	{
 		MenuSwitcher->SetActiveWidgetIndex(1); // Show options panel
-	}
+		}
 }
 
 void UPauseMenuWidget::OnExitPromptClicked()
