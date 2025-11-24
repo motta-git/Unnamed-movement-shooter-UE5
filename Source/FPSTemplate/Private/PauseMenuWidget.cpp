@@ -7,6 +7,11 @@
 #include "InputCoreTypes.h"
 #include "Input/Reply.h"
 
+UPauseMenuWidget::UPauseMenuWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+{
+	SetIsFocusable(true);
+}
+
 void UPauseMenuWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -16,10 +21,10 @@ void UPauseMenuWidget::NativeConstruct()
 		ContinueButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnContinueClicked);
 	}
 
-	if (OptionsButton)
+	/*if (OptionsButton)
 	{
 		OptionsButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnOptionsClicked);
-	}
+	}*/
 
 	if (ExitToMenuButton)
 	{
@@ -36,7 +41,7 @@ void UPauseMenuWidget::NativeConstruct()
 		CancelExitButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnCancelExitClicked);
 	}
 
-	OptionsMenuWidget = nullptr;
+	/*OptionsMenuWidget = nullptr;*/
 
 	// Ensure we are in UI mode while the menu is open
 	if (APlayerController* PC = GetOwningPlayer())
@@ -48,6 +53,9 @@ void UPauseMenuWidget::NativeConstruct()
 		PC->bShowMouseCursor = true;
 		PC->SetIgnoreLookInput(true);
 		PC->SetIgnoreMoveInput(true);
+
+		// Also set user focus explicitly so Slate routes key events to this widget
+		SetUserFocus(PC);
 	}
 }
 
@@ -61,6 +69,12 @@ FReply UPauseMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKey
 	}
 
 	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+}
+
+FReply UPauseMenuWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	// If the user clicks on the background, ensure we reclaim focus so keyboard input (ESC) still works
+	return FReply::Handled().SetUserFocus(TakeWidget(), EFocusCause::Mouse);
 }
 
 void UPauseMenuWidget::ClosePauseMenu()
@@ -83,6 +97,11 @@ void UPauseMenuWidget::ClosePauseMenu()
 		PC->SetIgnoreLookInput(false);
 		PC->SetIgnoreMoveInput(false);
 
+		// Reset input mode to Game Only and ensure cursor is hidden
+		FInputModeGameOnly GameMode;
+		PC->SetInputMode(GameMode);
+		PC->bShowMouseCursor = false;
+
 		// Center the mouse in the viewport so look input is captured reliably
 		if (GetWorld() && GetWorld()->GetGameViewport())
 		{
@@ -91,6 +110,8 @@ void UPauseMenuWidget::ClosePauseMenu()
 			PC->SetMouseLocation((int32)(ViewportSize.X * 0.5f), (int32)(ViewportSize.Y * 0.5f));
 		}
 	}
+
+
 
 	if (GetWorld())
 	{
@@ -103,22 +124,14 @@ void UPauseMenuWidget::OnContinueClicked()
 	ClosePauseMenu();
 
 }
-
-void UPauseMenuWidget::OnOptionsClicked()
-{
-	if (MenuSwitcher)
-	{
-		MenuSwitcher->SetActiveWidgetIndex(1); // Show options panel
-		}
-}
-
+/*
 void UPauseMenuWidget::OnExitPromptClicked()
 {
 	if (MenuSwitcher)
 	{
 		MenuSwitcher->SetActiveWidgetIndex(2); // Show exit confirmation panel
 	}
-}
+}*/
 
 void UPauseMenuWidget::OnExitToMenuClicked()
 {
@@ -133,5 +146,13 @@ void UPauseMenuWidget::OnCancelExitClicked()
 	if (MenuSwitcher)
 	{
 		MenuSwitcher->SetActiveWidgetIndex(0); // Return to main menu panel
+	}
+}
+
+void UPauseMenuWidget::OnExitPromptClicked()
+{
+	if (MenuSwitcher)
+	{
+		MenuSwitcher->SetActiveWidgetIndex(2); // Show exit confirmation panel
 	}
 }
