@@ -2,4 +2,5 @@
 
 - [x] Fix bug that makes the pistol recoil downwards when firing
 - [x] Make weapon not hide when jumping.
+- [ ] Implement Save System (Level persistence)
 
