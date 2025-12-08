@@ -6,6 +6,7 @@
 #include "Engine/GameViewportClient.h"
 #include "InputCoreTypes.h"
 #include "Input/Reply.h"
+#include "FPSGameInstance.h"
 
 UPauseMenuWidget::UPauseMenuWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -137,6 +138,16 @@ void UPauseMenuWidget::OnExitToMenuClicked()
 {
 	if (GetWorld())
 	{
+		// Save the current level before exiting to main menu
+		if (UGameInstance* GameInstance = GetWorld()->GetGameInstance())
+		{
+			if (UFPSGameInstance* FPSGameInstance = Cast<UFPSGameInstance>(GameInstance))
+			{
+				FPSGameInstance->SaveCurrentLevel();
+				UE_LOG(LogTemp, Log, TEXT("Saved current level before exiting to main menu"));
+			}
+		}
+
 		UGameplayStatics::OpenLevel(this, MainMenuLevelName);
 	}
 }
