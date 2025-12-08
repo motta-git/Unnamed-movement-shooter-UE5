@@ -9,6 +9,7 @@ UFPSGameInstance::UFPSGameInstance()
 	UserIndex = 0;
 	CurrentSaveGame = nullptr;
 	CurrentLevelIndex = 0;
+	
 	LevelNames.Add("L_Level_0");
 	LevelNames.Add("L_Level_1");
 	LevelNames.Add("L_Level_2");
@@ -20,6 +21,7 @@ UFPSGameInstance::UFPSGameInstance()
 	LevelNames.Add("L_Run");
 	LevelNames.Add("L_Level_9");
 	LevelNames.Add("L_Level_8");
+	bIsMusicMuted = false;
 }
 
 void UFPSGameInstance::Init()
@@ -29,16 +31,45 @@ void UFPSGameInstance::Init()
 	// Load existing save game if it exists
 	CurrentSaveGame = LoadOrCreateSaveGame();
 
-	// Restore the current level index from save game
+	// If save game was loaded, log the status
 	if (CurrentSaveGame)
 	{
-		CurrentLevelIndex = CurrentSaveGame->CurrentLevelIndex;
-		UE_LOG(LogTemp, Log, TEXT("FPSGameInstance initialized. Save slot: %s, Current Level Index: %d"), 
-			*SaveSlotName, CurrentLevelIndex);
+		UE_LOG(LogTemp, Log, TEXT("FPSGameInstance initialized. Save slot: %s, Current Level Index: %d, Music Muted: %d"), 
+			*SaveSlotName, CurrentLevelIndex, bIsMusicMuted);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Log, TEXT("FPSGameInstance initialized. Save slot: %s"), *SaveSlotName);
+	}
+
+	// Detect the current level and update the index accordingly
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		// Get the current level name
+		FString CurrentLevelName = World->GetMapName();
+		
+		// Remove the "UEDPIE_0_" prefix that appears in PIE (Play In Editor) mode
+		CurrentLevelName.RemoveFromStart(World->StreamingLevelsPrefix);
+
+		// Try to find the level index in the LevelNames array
+		int32 FoundIndex = LevelNames.IndexOfByKey(FName(*CurrentLevelName));
+		if (FoundIndex != INDEX_NONE)
+		{
+			CurrentLevelIndex = FoundIndex;
+			UE_LOG(LogTemp, Log, TEXT("Detected current level: %s at index: %d"), *CurrentLevelName, CurrentLevelIndex);
+			
+			// Update the save game with the current level index
+			if (CurrentSaveGame)
+			{
+				CurrentSaveGame->CurrentLevelIndex = CurrentLevelIndex;
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Current level %s not found in LevelNames array. Using saved index: %d"), 
+				*CurrentLevelName, CurrentLevelIndex);
+		}
 	}
 }
 
@@ -145,8 +176,32 @@ UFPSSaveGame* UFPSGameInstance::LoadOrCreateSaveGame()
 		
 		if (SaveGame)
 		{
-			UE_LOG(LogTemp, Log, TEXT("Loaded existing save game. Last level: %s"), 
+			UE_LOG(LogTemp, Log, TEXT("Loaded existing save game [V2]. Last level: %s"), 
 				*SaveGame->SavedLevelName.ToString());
+			
+			// Validation: Ensure the loaded index matches the loaded level name
+			// This fixes issues where the save file has desynchronized data (e.g. Index is 10 but Level is "L_Level_0")
+			FName SavedLevelName = SaveGame->SavedLevelName;
+			UE_LOG(LogTemp, Log, TEXT("SavedLevelName: %s"), 
+				*SavedLevelName.ToString());
+			int32 IndexFromMsg = LevelNames.IndexOfByKey(SavedLevelName);
+			UE_LOG(LogTemp, Log, TEXT("IndexFromMsg: %d"), 
+				IndexFromMsg);
+			UE_LOG(LogTemp, Warning, TEXT("[DEBUG] LoadOrCreateSaveGame: LevelNames.Num() = %d. SavedLevelName = '%s'. Saved Index = %d. Found Index = %d"), 
+				LevelNames.Num(), *SavedLevelName.ToString(), SaveGame->CurrentLevelIndex, IndexFromMsg);
+
+			if (IndexFromMsg != INDEX_NONE && IndexFromMsg != SaveGame->CurrentLevelIndex)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Save Data Mismatch! Saved Index: %d, but Saved Level '%s' is at index %d. Correcting index."), 
+					SaveGame->CurrentLevelIndex, *SavedLevelName.ToString(), IndexFromMsg);
+				
+				SaveGame->CurrentLevelIndex = IndexFromMsg;
+				// We don't save immediately to disk to avoid perf hit, it will be saved next time user triggers save
+			}
+
+			// Update runtime cache if this is the first load
+			CurrentLevelIndex = SaveGame->CurrentLevelIndex;
+			bIsMusicMuted = SaveGame->bIsMusicMuted;
 		}
 		else
 		{
@@ -196,7 +251,7 @@ void UFPSGameInstance::LoadNextLevel()
 		UE_LOG(LogTemp, Warning, TEXT("LoadNextLevel: Already at the last level (Index: %d)"), CurrentLevelIndex);
 		return;
 	}
-
+	UE_LOG(LogTemp, Log, TEXT("Loading next level: %s"), *LevelNames[NextIndex].ToString());
 	LoadLevelByIndex(NextIndex);
 }
 
@@ -231,4 +286,36 @@ void UFPSGameInstance::SetCurrentLevelIndex(int32 NewIndex)
 		UE_LOG(LogTemp, Warning, TEXT("SetCurrentLevelIndex: Invalid index %d. LevelNames array has %d elements."), 
 			NewIndex, LevelNames.Num());
 	}
+}
+
+void UFPSGameInstance::SetMusicMuted(bool bMute)
+{
+	bIsMusicMuted = bMute;
+	UE_LOG(LogTemp, Log, TEXT("SetMusicMuted: %s"), bIsMusicMuted ? TEXT("True") : TEXT("False"));
+
+	// Ensure we have a save game object
+	if (!CurrentSaveGame)
+	{
+		CurrentSaveGame = LoadOrCreateSaveGame();
+	}
+
+	if (CurrentSaveGame)
+	{
+		CurrentSaveGame->bIsMusicMuted = bIsMusicMuted;
+		
+		// Save to disk immediately so the setting persists
+		if (UGameplayStatics::SaveGameToSlot(CurrentSaveGame, SaveSlotName, UserIndex))
+		{
+			UE_LOG(LogTemp, Log, TEXT("Successfully saved music mute state"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to save music mute state"));
+		}
+	}
+}
+
+bool UFPSGameInstance::GetMusicMuted() const
+{
+	return bIsMusicMuted;
 }

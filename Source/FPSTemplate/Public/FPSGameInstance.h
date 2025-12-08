@@ -73,6 +73,18 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Level Management")
 	int32 CurrentLevelIndex;
 
+	/** Whether the music is muted */
+	UPROPERTY(BlueprintReadOnly, Category = "Audio Settings")
+	bool bIsMusicMuted;
+
+	/** Set the music mute state and save it */
+	UFUNCTION(BlueprintCallable, Category = "Audio Settings")
+	void SetMusicMuted(bool bMute);
+
+	/** Get the current music mute state */
+	UFUNCTION(BlueprintCallable, Category = "Audio Settings")
+	bool GetMusicMuted() const;
+
 	/** Cached reference to the current save game object */
 	UPROPERTY()
 	UFPSSaveGame* CurrentSaveGame;

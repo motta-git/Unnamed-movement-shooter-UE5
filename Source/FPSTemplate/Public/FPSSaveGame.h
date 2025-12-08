@@ -30,4 +30,8 @@ public:
 	/** Example: You could add Health, Inventory, etc. here later */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SaveData")
 	float PlayerHealth;
+
+	/** Whether the music is muted */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SaveData")
+	bool bIsMusicMuted;
 };
