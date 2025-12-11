@@ -1,0 +1,169 @@
+#include "PauseMenuWidget.h"
+#include "Components/Button.h"
+#include "Components/WidgetSwitcher.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerController.h"
+#include "Engine/GameViewportClient.h"
+#include "InputCoreTypes.h"
+#include "Input/Reply.h"
+#include "FPSGameInstance.h"
+
+UPauseMenuWidget::UPauseMenuWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+{
+	SetIsFocusable(true);
+}
+
+void UPauseMenuWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (ContinueButton)
+	{
+		ContinueButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnContinueClicked);
+	}
+
+	/*if (OptionsButton)
+	{
+		OptionsButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnOptionsClicked);
+	}*/
+
+	if (ExitToMenuButton)
+	{
+		ExitToMenuButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnExitPromptClicked);
+	}
+
+	if (ConfirmExitButton)
+	{
+		ConfirmExitButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnExitToMenuClicked);
+	}
+
+	if (CancelExitButton)
+	{
+		CancelExitButton->OnClicked.AddDynamic(this, &UPauseMenuWidget::OnCancelExitClicked);
+	}
+
+	/*OptionsMenuWidget = nullptr;*/
+
+	// Ensure we are in UI mode while the menu is open
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		FInputModeGameAndUI Mode; // allows ESC/game input if needed
+		Mode.SetWidgetToFocus(TakeWidget());
+		Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		PC->SetInputMode(Mode);
+		PC->bShowMouseCursor = true;
+		PC->SetIgnoreLookInput(true);
+		PC->SetIgnoreMoveInput(true);
+
+		// Also set user focus explicitly so Slate routes key events to this widget
+		SetUserFocus(PC);
+	}
+}
+
+FReply UPauseMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+	// Close the pause menu when Escape is pressed
+	if (InKeyEvent.GetKey() == EKeys::Escape)
+	{
+		ClosePauseMenu();
+		return FReply::Handled();
+	}
+
+	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+}
+
+FReply UPauseMenuWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	// If the user clicks on the background, ensure we reclaim focus so keyboard input (ESC) still works
+	return FReply::Handled().SetUserFocus(TakeWidget(), EFocusCause::Mouse);
+}
+
+void UPauseMenuWidget::ClosePauseMenu()
+{
+	RemoveFromParent();
+
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		// Use a game-only input mode that does not require clicking to capture the mouse
+		FInputModeGameOnly Mode;
+		// Ensure the mouse capture isn't tied to mouse-down (helps with immediate look after closing)
+		Mode.SetConsumeCaptureMouseDown(false);
+		PC->SetInputMode(Mode);
+		PC->bShowMouseCursor = false;
+
+		// Disable UI-specific click/mouse over events so the controller receives look/move normally
+		PC->bEnableClickEvents = false;
+		PC->bEnableMouseOverEvents = false;
+
+		PC->SetIgnoreLookInput(false);
+		PC->SetIgnoreMoveInput(false);
+
+		// Reset input mode to Game Only and ensure cursor is hidden
+		FInputModeGameOnly GameMode;
+		PC->SetInputMode(GameMode);
+		PC->bShowMouseCursor = false;
+
+		// Center the mouse in the viewport so look input is captured reliably
+		if (GetWorld() && GetWorld()->GetGameViewport())
+		{
+			FVector2D ViewportSize;
+			GetWorld()->GetGameViewport()->GetViewportSize(ViewportSize);
+			PC->SetMouseLocation((int32)(ViewportSize.X * 0.5f), (int32)(ViewportSize.Y * 0.5f));
+		}
+	}
+
+
+
+	if (GetWorld())
+	{
+		UGameplayStatics::SetGamePaused(GetWorld(), false);
+	}
+}
+
+void UPauseMenuWidget::OnContinueClicked()
+{
+	ClosePauseMenu();
+
+}
+/*
+void UPauseMenuWidget::OnExitPromptClicked()
+{
+	if (MenuSwitcher)
+	{
+		MenuSwitcher->SetActiveWidgetIndex(2); // Show exit confirmation panel
+	}
+}*/
+
+void UPauseMenuWidget::OnExitToMenuClicked()
+{
+	if (GetWorld())
+	{
+		// Save the current level before exiting to main menu
+		if (UGameInstance* GameInstance = GetWorld()->GetGameInstance())
+		{
+			if (UFPSGameInstance* FPSGameInstance = Cast<UFPSGameInstance>(GameInstance))
+			{
+				FPSGameInstance->SaveCurrentLevel();
+				UE_LOG(LogTemp, Log, TEXT("Saved current level before exiting to main menu"));
+			}
+		}
+
+		UGameplayStatics::OpenLevel(this, MainMenuLevelName);
+	}
+}
+
+void UPauseMenuWidget::OnCancelExitClicked()
+{
+	if (MenuSwitcher)
+	{
+		MenuSwitcher->SetActiveWidgetIndex(0); // Return to main menu panel
+	}
+}
+
+void UPauseMenuWidget::OnExitPromptClicked()
+{
+	if (MenuSwitcher)
+	{
+		MenuSwitcher->SetActiveWidgetIndex(2); // Show exit confirmation panel
+	}
+}
