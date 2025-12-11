@@ -244,7 +244,7 @@ void UFPSGameInstance::LoadLevelByIndex(int32 LevelIndex)
 void UFPSGameInstance::LoadNextLevel()
 {
 	int32 NextIndex = CurrentLevelIndex + 1;
-	
+	UE_LOG(LogTemp, Log, TEXT("LoadNextLevel: Next index: %d"), NextIndex);
 	// Check if we've reached the end of the level array
 	if (NextIndex >= LevelNames.Num())
 	{
